@@ -52,8 +52,19 @@ class Controller { // abstract class
         throw new Error("Method 'setVolume()' must be implemented.");
     }
 
-    skipTo(seconds) {
+    // time in milliseconds
+    skipTo(ms) {
         throw new Error("Method 'skipTo()' must be implemented.");
+    }
+    
+    // time returned in milliseconds
+    async getCurrentTime() {
+        throw new Error("Method 'getCurrentTime()' must be implemented.");
+    }
+    
+    // time returned in milliseconds
+    async getDuration() {
+        throw new Error("Method 'getDuration()' must be implemented.");
     }
 }
 
@@ -96,6 +107,10 @@ class YoutubeController extends Controller {
         this.player.playVideo();
     }
 
+    isPlaying() {
+
+    }
+
     pause() {
         this.player.pauseVideo();
     }
@@ -104,8 +119,16 @@ class YoutubeController extends Controller {
         this.player.setVolume(vol);
     }
 
-    skipTo(seconds) {
-        this.player.seekTo(seconds, true);
+    skipTo(ms) {
+        this.player.seekTo(ms / 1000, true);
+    }
+    
+    async getCurrentTime() {
+        return this.player.getCurrentTime() * 1000;
+    }
+    
+    async getDuration() {
+        return this.player.getDuration() * 1000;
     }
 }
 
@@ -164,8 +187,8 @@ class SoundcloudController extends Controller {
         this.player.setVolume(vol);
     }
 
-    skipTo(seconds) {
-        this.player.seekTo(seconds*1000);
+    skipTo(ms) {
+        this.player.seekTo(ms);
     }
 
     // because Soundcloud API key registration is now locked, only way to access track-metadata is via the embeds -> use second embed on page to fetch metadata when adding link (slower of course)
@@ -176,6 +199,16 @@ class SoundcloudController extends Controller {
                     this.player.getCurrentSound(sound => resolve(sound));
                 }});
         });
+    }
+    
+    async getCurrentTime() {
+        return new Promise(resolve => 
+                           this.player.getPosition(millis => resolve(millis)));
+    }
+    
+    async getDuration() {
+        return new Promise(resolve => 
+                           this.player.getDuration(millis => resolve(millis)));
     }
 }
 
@@ -286,9 +319,19 @@ class SpotifyController extends Controller {
         });
     }
 
-    skipTo(seconds) {
-        // Seek to seconds of currently playing song:
-        this.player.seek(seconds * 1000).then(() => {
+    skipTo(ms) {
+        // Seek to ms of currently playing song:
+        this.player.seek(ms).then(() => {
         });
+    }
+    
+    async getCurrentTime() {
+        if (!this.state?.position) return 0;
+        return this.state.position;
+    }
+    
+    async getDuration() {
+        if (!this.state?.duration) return 0;
+        return this.state.duration;
     }
 }
